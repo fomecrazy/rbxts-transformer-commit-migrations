@@ -27,7 +27,7 @@
   "peerDependencies": {
     "husky": "*",
     "jiti": "*",
-    "typescript": "^5.5.3"
+    "typescript": "*"
   },
   "files": [
     "out",
@@ -40,7 +40,8 @@
     "eslint-plugin-prettier": "^5.5.6",
     "prettier": "^3.9.6",
     "tsx": "^4.23.13",
-    "typescript-eslint": "^8.70.0"
+    "typescript-eslint": "^8.70.0",
+    "typescript": "^5.5.3"
   },
   "dependencies": {
     "glob": "^13.0.6"
