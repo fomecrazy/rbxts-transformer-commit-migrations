@@ -1,0 +1,47 @@
+{
+  "name": "rbxts-transformer-commit-migrations",
+  "version": "1.0.0",
+  "description": "",
+  "main": "out/index.js",
+  "typegis": "index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc"
+  },
+  "bin": {
+    "commit-migrations": "./bin/init.js",
+    "resolve-commit-migrations": "./out/cli/resolveMacros.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fomecrazy/rbxts-transformer-commit-migrations.git"
+  },
+  "keywords": [
+    "transformer"
+  ],
+  "author": "fome",
+  "license": "MIT",
+  "homepage": "https://github.com/fomecrazy/rbxts-transformer-commit-migrations#readme",
+  "bugs": {
+    "url": "https://github.com/fomecrazy/rbxts-transformer-commit-migrations/issues"
+  },
+  "peerDependencies": {
+    "husky": "*",
+    "jiti": "*",
+    "typescript": "*"
+  },
+  "files": ["out", "index.d.ts"],
+  "devDependencies": {
+    "@types/node": "^26.5.1",
+    "eslint": "^10.10.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.6",
+    "prettier": "^3.9.6",
+    "tsx": "^4.23.13",
+    "typescript-eslint": "^8.70.0"
+  },
+  "dependencies": {
+    "glob": "^13.0.6",
+    "typescript": "^5.5.3"
+  }
+}

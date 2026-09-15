@@ -1,0 +1,15 @@
+{
+	"compilerOptions": {
+		"target": "esnext",
+		"module": "node16",
+		"moduleResolution": "node16",
+		"outDir": "out",
+		"rootDir": "src",
+		"esModuleInterop": true,
+		"types": ["node"],
+		"strict": true,
+		"skipLibCheck": true,
+		"allowJs": true,
+	},
+	"include": ["index.d.ts", "src/test-migration.ts", "src/**/*.ts"],
+}
