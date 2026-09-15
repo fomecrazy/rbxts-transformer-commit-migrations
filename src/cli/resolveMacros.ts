@@ -37,12 +37,7 @@ function walk(node: ts.Node, ctx: { changed: boolean }): void {
 		const orderArg = node.arguments[0];
 		const order = orderArg ? ts.isNumericLiteral(orderArg) ? parseInt(orderArg.getText()) : null : 0;
 
-		if (order === null) {
-			console.error("Recieved null order when resolving migration macros.")
-			process.exit(1)
-		}
-
-		if (usedOrders.has(order)) {
+		if (order !== null && usedOrders.has(order)) {
 			console.error("Multiple of the same migration orders found. Every migration has to have a unique order.");
 			process.exit(1);
 		}
@@ -52,8 +47,10 @@ function walk(node: ts.Node, ctx: { changed: boolean }): void {
 		}
 
 		if (!orderArg?.getText().includes("__resolved")) {
-			usedOrders.add(order);
-			migrationData[entry] = { timestamp: Date.now(), order };
+			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+			usedOrders.add(order!);
+			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+			migrationData[entry] = { timestamp: Date.now(), order: order! };
 			ctx.changed = true
 		}
 
