@@ -29,6 +29,7 @@ const files = glob.sync("src/**/*.ts");
 const migrations: string[] = [];
 const migrationData: Record<string, { timestamp: number, order: number }> = {};
 const usedOrders = new Set<number>();
+const changed: string[] = [];
 
 function walk(node: ts.Node, ctx: { changed: boolean }): void {
 	if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && MACRO_REGEX.test(node.expression.text)) {
@@ -53,10 +54,10 @@ function walk(node: ts.Node, ctx: { changed: boolean }): void {
 			migrationData[entry] = { timestamp: Date.now(), order: order! };
 			ctx.changed = true
 		}
-
+		
 		migrations.push(entry);
 	}
-
+	
 	ts.forEachChild(node, (node) => {
 		walk(node, ctx)
 	});
@@ -70,6 +71,7 @@ for (const file of files) {
 	walk(sourceFile, ctx);
 
 	if (ctx.changed) {
+		changed.push(file)
 		writeFileSync(file, src.replaceAll(MACRO_CALL_REGEX, `${MACRO}("__resolved")`))
 	}
 }
@@ -84,7 +86,10 @@ if (removedMigrations.length > 0) {
 
 const newMigrations = migrations.filter((v) => !previousMigrations.includes(v));
 
-if (newMigrations.length === 0) process.exit(0);
+if (newMigrations.length === 0) {
+	console.error("No new migrations to resolve.")
+	process.exit(0);
+}
 
 const newLines = newMigrations
 	.map((e) => `\t${e}: { timestamp: ${migrationData[e].timestamp}, order: ${migrationData[e].order} },`)
@@ -109,4 +114,9 @@ if (!existsSync(CONFIG)) {
 	writeFileSync(CONFIG, updated);
 }
 
-console.log(`Successfuly resolved ${newMigrations.length} new migrations. [${newMigrations}]`);
+changed.push(CONFIG)
+console.error(`Successfuly resolved ${newMigrations.length} new migrations. [${newMigrations}]`);
+
+for (const path of changed) {
+	console.log(path.replace(/\\/g, "/"))
+}

@@ -15,7 +15,7 @@ if (!existsSync(huskyDir)) {
 	process.exit(1);
 }
 
-const setupResolve = `npx resolve-commit-migrations\n`;
+const setupResolve = `npx resolve-commit-migrations | xargs git add\n`;
 
 if (existsSync(hookFile)) {
 	const existing = readFileSync(hookFile, "utf-8");
