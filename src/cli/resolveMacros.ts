@@ -5,6 +5,25 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import { glob } from "glob";
 import loadMigrationEntries from "../util/loadMigrationEntries.js";
 import { CONFIG, MACRO, MACRO_CALL_REGEX, MACRO_REGEX} from "../config.js"
+import type { TransformerConfig } from "../index.js";
+
+function getConfigPathFromTransformerConfig(tsconfigPath = "tsconfig.json"): string | undefined {
+	const raw = readFileSync(tsconfigPath, "utf-8");
+	if (!raw) return;
+
+
+	const result = ts.parseConfigFileTextToJson(tsconfigPath, raw);
+	if (result.error || !result.config) return undefined;
+
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+	const plugins: Array<{ transform: string } & TransformerConfig> = result.config.compilerOptions?.plugins ?? [];
+	const entry = plugins.find(
+		(p) => p.transform === "rbxts-transformer-commit-migrations"
+	);
+	if (!entry) return undefined;
+
+	return entry.configPath
+}
 
 function findEntryPath(node: ts.Node): string[] | null {
 	const parts: string[] = [];
@@ -32,6 +51,7 @@ function findEntryPath(node: ts.Node): string[] | null {
 	return parts.length > 0 ? parts.reverse() : null;
 }
 
+const config = getConfigPathFromTransformerConfig() ?? CONFIG
 const files = glob.sync("src/**/*.ts");
 const migrations: string[] = [];
 const migrationData: Record<string, { timestamp: number, order: number, path: string[] }> = {};
@@ -85,7 +105,7 @@ for (const file of files) {
 	}
 }
 
-const [previousMigrations] = loadMigrationEntries(CONFIG);
+const [previousMigrations] = loadMigrationEntries(config);
 const removedMigrations = previousMigrations.filter((v) => !migrations.includes(v));
 
 if (removedMigrations.length > 0) {
@@ -106,13 +126,13 @@ const newLines = newMigrations
 
 const migratedEntries = migrations.map((e) => `"${e}"`).join(" | ");
 
-if (!existsSync(CONFIG)) {
+if (!existsSync(config)) {
 	writeFileSync(
-		CONFIG,
+		config,
 		`type MigratedEntries = ${migratedEntries}\n\ninterface MigrationData {\n\tpath: string[]\n\ttimestamp: number\n\torder: number\n}\n\n// AUTO-GENERATED MIGRATION CONFIG - DO NOT EDIT\nexport const MIGRATED_ENTRIES: Record<MigratedEntries, MigrationData> = {\n${newLines}\n};\n`
 	);
 } else {
-	const lines = readFileSync(CONFIG, "utf-8").split("\n");
+	const lines = readFileSync(config, "utf-8").split("\n");
 	const typeIndex = lines.findIndex((l) => l.startsWith("type MigratedEntries"));
 
 	if (typeIndex !== -1) {
@@ -120,10 +140,10 @@ if (!existsSync(CONFIG)) {
 	}
 
 	const updated = lines.join("\n").replace(/\};\s*$/, `${newLines}\n};`);
-	writeFileSync(CONFIG, updated);
+	writeFileSync(config, updated);
 }
 
-changed.push(CONFIG)
+changed.push(config)
 console.error(`Successfuly resolved ${newMigrations.length} new migrations. [${newMigrations}]`);
 
 for (const path of changed) {

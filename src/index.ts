@@ -4,7 +4,7 @@ import loadMigrationEntries from "./util/loadMigrationEntries.js";
 import { CONFIG } from "./config.js";
 import { existsSync } from "node:fs";
 
-interface TransformerConfig {
+export interface TransformerConfig {
 	configPath?: string;
 	files?: string[];
 }
