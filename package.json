@@ -1,7 +1,7 @@
 {
   "name": "rbxts-transformer-commit-migrations",
   "version": "1.0.0",
-  "description": "",
+  "description": "rbxts transformer used in user data migration builder chains",
   "main": "out/index.js",
   "typegis": "index.d.ts",
   "type": "module",
@@ -9,8 +9,8 @@
     "build": "tsc"
   },
   "bin": {
-    "commit-migrations": "./bin/init.js",
-    "resolve-commit-migrations": "./out/cli/resolveMacros.js"
+    "commit-migrations": "bin/init.js",
+    "resolve-commit-migrations": "out/cli/resolveMacros.js"
   },
   "repository": {
     "type": "git",
@@ -30,7 +30,10 @@
     "jiti": "*",
     "typescript": "*"
   },
-  "files": ["out", "index.d.ts"],
+  "files": [
+    "out",
+    "index.d.ts"
+  ],
   "devDependencies": {
     "@types/node": "^26.5.1",
     "eslint": "^10.10.0",
