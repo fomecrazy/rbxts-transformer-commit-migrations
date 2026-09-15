@@ -6,34 +6,43 @@ import { glob } from "glob";
 import loadMigrationEntries from "../util/loadMigrationEntries.js";
 import { CONFIG, MACRO, MACRO_CALL_REGEX, MACRO_REGEX} from "../config.js"
 
-function findEntryName(node: ts.Node): string | null {
+function findEntryPath(node: ts.Node): string[] | null {
+	const parts: string[] = [];
 	let current: ts.Node | undefined = node.parent;
 
 	while (current) {
 		if (ts.isPropertyAssignment(current) || ts.isShorthandPropertyAssignment(current)) {
-			const name = ts.isIdentifier(current.name) ? current.name.text : null;
-			return name;
-		}
-
-		if (ts.isCallExpression(current) || ts.isPropertyAccessExpression(current)) {
+			if (ts.isIdentifier(current.name) || ts.isStringLiteral(current.name)) {
+				parts.push(current.name.text);
+			} else {
+				return null;
+			}
+			current = current.parent;
+		} else if (
+			ts.isCallExpression(current) ||
+			ts.isPropertyAccessExpression(current) ||
+			ts.isObjectLiteralExpression(current)
+		) {
 			current = current.parent;
 		} else {
 			break;
 		}
 	}
 
-	return null;
+	return parts.length > 0 ? parts.reverse() : null;
 }
 
 const files = glob.sync("src/**/*.ts");
 const migrations: string[] = [];
-const migrationData: Record<string, { timestamp: number, order: number }> = {};
+const migrationData: Record<string, { timestamp: number, order: number, path: string[] }> = {};
 const usedOrders = new Set<number>();
 const changed: string[] = [];
 
 function walk(node: ts.Node, ctx: { changed: boolean }): void {
 	if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && MACRO_REGEX.test(node.expression.text)) {
-		const entry = findEntryName(node)
+		const path = findEntryPath(node)
+		if (!path || path.length === 0) return;
+		const entry = path.join("/")
 
 		const orderArg = node.arguments[0];
 		const order = orderArg ? ts.isNumericLiteral(orderArg) ? parseInt(orderArg.getText()) : null : 0;
@@ -51,11 +60,11 @@ function walk(node: ts.Node, ctx: { changed: boolean }): void {
 			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 			usedOrders.add(order!);
 			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-			migrationData[entry] = { timestamp: Date.now(), order: order! };
+			migrationData[entry] = { timestamp: Date.now(), order: order!, path };
 			ctx.changed = true
-		}
-		
-		migrations.push(entry);
+
+			migrations.push(entry);
+		}	
 	}
 	
 	ts.forEachChild(node, (node) => {
@@ -92,7 +101,7 @@ if (newMigrations.length === 0) {
 }
 
 const newLines = newMigrations
-	.map((e) => `\t${e}: { timestamp: ${migrationData[e].timestamp}, order: ${migrationData[e].order} },`)
+	.map((e) => `\t"${e}": { timestamp: ${migrationData[e].timestamp}, order: ${migrationData[e].order}, path: ${JSON.stringify(migrationData[e].path)} },`)
 	.join("\n");
 
 const migratedEntries = migrations.map((e) => `"${e}"`).join(" | ");
@@ -100,7 +109,7 @@ const migratedEntries = migrations.map((e) => `"${e}"`).join(" | ");
 if (!existsSync(CONFIG)) {
 	writeFileSync(
 		CONFIG,
-		`type MigratedEntries = ${migratedEntries}\n\ninterface MigrationData {\n\ttimestamp: number\n\torder: number\n}\n\n// AUTO-GENERATED MIGRATION CONFIG - DO NOT EDIT\nexport const MIGRATED_ENTRIES: Record<MigratedEntries, MigrationData> = {\n${newLines}\n};\n`
+		`type MigratedEntries = ${migratedEntries}\n\ninterface MigrationData {\n\tpath: string[]\n\ttimestamp: number\n\torder: number\n}\n\n// AUTO-GENERATED MIGRATION CONFIG - DO NOT EDIT\nexport const MIGRATED_ENTRIES: Record<MigratedEntries, MigrationData> = {\n${newLines}\n};\n`
 	);
 } else {
 	const lines = readFileSync(CONFIG, "utf-8").split("\n");
