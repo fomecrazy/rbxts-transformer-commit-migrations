@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import ts from "typescript";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { glob } from "glob";
