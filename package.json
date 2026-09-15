@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "rbxts transformer used in user data migration builder chains",
   "main": "out/index.js",
-  "typegis": "index.d.ts",
   "type": "module",
   "scripts": {
     "build": "tsc"
