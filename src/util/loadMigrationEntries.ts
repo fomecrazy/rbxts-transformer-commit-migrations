@@ -38,7 +38,7 @@ export default function (config: string): [string[], Record<string, unknown>] {
 		const object: Record<string, unknown> = {}
 
 		for (const prop of declaration.initializer.properties) {
-			if (!ts.isPropertyAssignment(prop) || !ts.isIdentifier(prop.name) || !ts.isObjectLiteralExpression(prop.initializer)) continue;
+			if (!ts.isPropertyAssignment(prop) || !ts.isStringLiteral(prop.name) || !ts.isObjectLiteralExpression(prop.initializer)) continue;
 
 			result.push(prop.name.text)
 			object[prop.name.text] = reconstructProperties(prop.initializer.properties)
