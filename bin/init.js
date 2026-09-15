@@ -11,19 +11,20 @@ const huskyDir = resolve(dir, ".husky");
 const hookFile = resolve(huskyDir, "pre-commit");
 
 if (!existsSync(huskyDir)) {
-  console.error("No .husky folder found. Run `npx husky init` first.");
-  process.exit(1);
+	console.error("No .husky folder found. Run `npx husky init` first.");
+	process.exit(1);
 }
 
 const setupResolve = `npx resolve-commit-migrations\n`;
 
 if (existsSync(hookFile)) {
-  const existing = readFileSync(hookFile, "utf-8");
-  if (!existing.includes(setupResolve)) {
-    writeFileSync(hookFile, existing + setupResolve);
-  }
+	const existing = readFileSync(hookFile, "utf-8");
+	
+	if (!existing.includes(setupResolve)) {
+		writeFileSync(hookFile, existing + `\n${setupResolve}`);
+	}
 } else {
-  writeFileSync(hookFile, `#!/bin/sh\n${setupResolve}`);
+	writeFileSync(hookFile, setupResolve);
 }
 
-console.log("Added rbxts-macro stamp to .husky/pre-commit");
+console.log("Added commit-migration macro stamp to .husky/pre-commit");
