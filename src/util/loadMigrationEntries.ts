@@ -42,7 +42,6 @@ export default function (config: string): [string[], Record<string, unknown>] {
 
 			result.push(prop.name.text)
 			object[prop.name.text] = reconstructProperties(prop.initializer.properties)
-			console.log(reconstructProperties(prop.initializer.properties))
 		}
 
 		return [result, object];
