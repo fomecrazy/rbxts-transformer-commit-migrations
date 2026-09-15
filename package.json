@@ -1,6 +1,6 @@
 {
   "name": "rbxts-transformer-commit-migrations",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "rbxts transformer used in user data migration builder chains",
   "main": "out/index.js",
   "type": "module",
