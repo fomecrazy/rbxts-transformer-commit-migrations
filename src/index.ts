@@ -14,7 +14,7 @@ export default function (_: ts.Program, config?: TransformerConfig): ts.Transfor
 		const configPath = config?.configPath ?? CONFIG;
 		if (!existsSync(configPath)) {
 			console.error(`Invalid migration config path ${configPath}`);
-			process.exit(1);
+			return (file: ts.SourceFile): ts.SourceFile => file;
 		}
 
 		const [entryArr, entries] = loadMigrationEntries(configPath) as [string[], Record<string, { timestamp: number, order: number, path: string[] }>];
