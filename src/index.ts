@@ -17,7 +17,7 @@ export default function (_: ts.Program, config?: TransformerConfig): ts.Transfor
 			return (file: ts.SourceFile): ts.SourceFile => file;
 		}
 
-		const [entryArr, entries] = loadMigrationEntries(configPath) as [string[], Record<string, { timestamp: number, order: number, path: string[] }>];
+		const [entryArr, entries] = loadMigrationEntries(configPath) as [string[], Record<string, { timestamp: number, order: number, path: string[], isTransform?: boolean }>];
 		const orderedEntries: string[] = entryArr
 			.map((i) => ({ i, timestamp: entries[i].timestamp, order: entries[i].order }))
 			.toSorted((a, b) => a.timestamp - b.timestamp || a.order - b.order)

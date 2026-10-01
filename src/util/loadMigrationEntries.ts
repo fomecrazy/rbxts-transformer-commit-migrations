@@ -8,10 +8,13 @@ function reconstructProperties(properties: ts.NodeArray<ts.ObjectLiteralElementL
 	const obj: Record<string, unknown> = {}
 
 	for (const prop of properties) {
-		if (!ts.isPropertyAssignment(prop) || !ts.isNumericLiteral(prop.initializer)) continue;
+		if (!ts.isPropertyAssignment(prop)) continue;
 
 		const name = ts.isIdentifier(prop.name) ? prop.name.text : prop.name.getText()
-		obj[name] = Number(prop.initializer.text)
+		const init = prop.initializer;
+		if (ts.isNumericLiteral(init)) obj[name] = Number(init.text)
+		else if (init.kind === ts.SyntaxKind.TrueKeyword) obj[name] = true
+		else if (init.kind === ts.SyntaxKind.FalseKeyword) obj[name] = false
 	}
 
 	return obj;

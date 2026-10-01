@@ -4,7 +4,7 @@ import ts from "typescript";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { glob } from "glob";
 import loadMigrationEntries from "../util/loadMigrationEntries.js";
-import { CONFIG, MACRO, MACRO_CALL_REGEX, MACRO_REGEX} from "../config.js"
+import { CONFIG, MACRO_CALL_REGEX, MACRO_REGEX, TRANSFORM_MACRO } from "../config.js"
 import type { TransformerConfig } from "../index.js";
 
 function getConfigPathFromTransformerConfig(tsconfigPath = "tsconfig.json"): string | undefined {
@@ -54,7 +54,7 @@ function findEntryPath(node: ts.Node): string[] | null {
 const config = getConfigPathFromTransformerConfig() ?? CONFIG
 const files = glob.sync("src/**/*.ts");
 const migrations: string[] = [];
-const migrationData: Record<string, { timestamp: number, order: number, path: string[] }> = {};
+const migrationData: Record<string, { timestamp: number, order: number, path: string[], isTransform: boolean }> = {};
 const usedOrders = new Set<number>();
 const changed: string[] = [];
 
@@ -66,13 +66,14 @@ function walk(node: ts.Node, ctx: { changed: boolean }): void {
 
 		const orderArg = node.arguments[0];
 		const order = orderArg ? ts.isNumericLiteral(orderArg) ? parseInt(orderArg.getText()) : null : 0;
+		const isTransform = node.expression.text === TRANSFORM_MACRO;
 
 		if (order !== null && usedOrders.has(order)) {
 			console.error("Multiple of the same migration orders found. Every migration has to have a unique order.");
 			process.exit(1);
 		}
 		if (!entry) {
-			console.error("Invalid migration entry, maybe you called a $migrate outside a table?");
+			console.error(`Invalid migration entry, maybe you called a ${node.expression.text} outside a table?`);
 			process.exit(1);
 		}
 
@@ -80,11 +81,10 @@ function walk(node: ts.Node, ctx: { changed: boolean }): void {
 			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 			usedOrders.add(order!);
 			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-			migrationData[entry] = { timestamp: Date.now(), order: order!, path };
+			migrationData[entry] = { timestamp: Date.now(), order: order!, path, isTransform };
 			ctx.changed = true
-
-			migrations.push(entry);
-		}	
+		}
+		migrations.push(entry);
 	}
 	
 	ts.forEachChild(node, (node) => {
@@ -101,7 +101,7 @@ for (const file of files) {
 
 	if (ctx.changed) {
 		changed.push(file)
-		writeFileSync(file, src.replaceAll(MACRO_CALL_REGEX, `${MACRO}("__resolved")`))
+		writeFileSync(file, src.replaceAll(MACRO_CALL_REGEX, `$1("__resolved")`))
 	}
 }
 
@@ -121,15 +121,17 @@ if (newMigrations.length === 0) {
 }
 
 const newLines = newMigrations
-	.map((e) => `\t"${e}": { timestamp: ${migrationData[e].timestamp}, order: ${migrationData[e].order}, path: ${JSON.stringify(migrationData[e].path)} },`)
+	.map((e) => `\t"${e}": { timestamp: ${migrationData[e].timestamp}, order: ${migrationData[e].order}, path: ${JSON.stringify(migrationData[e].path)}, isTransform: ${migrationData[e].isTransform} },`)
 	.join("\n");
 
 const migratedEntries = migrations.map((e) => `"${e}"`).join(" | ");
+// isTransform is optional so entries written before it existed still type check
+const migrationDataInterface = `interface MigrationData {\n\tpath: string[];\n\ttimestamp: number;\n\torder: number;\n\tisTransform?: boolean;\n}`;
 
 if (!existsSync(config)) {
 	writeFileSync(
 		config,
-		`type MigratedEntries = ${migratedEntries}\n\ninterface MigrationData {\n\tpath: string[]\n\ttimestamp: number\n\torder: number\n}\n\n// AUTO-GENERATED MIGRATION CONFIG - DO NOT EDIT\nexport const MIGRATED_ENTRIES: Record<MigratedEntries, MigrationData> = {\n${newLines}\n};\n`
+		`type MigratedEntries = ${migratedEntries}\n\n${migrationDataInterface}\n\n// AUTO-GENERATED MIGRATION CONFIG - DO NOT EDIT\nexport const MIGRATED_ENTRIES: Record<MigratedEntries, MigrationData> = {\n${newLines}\n};\n`
 	);
 } else {
 	const lines = readFileSync(config, "utf-8").split("\n");
@@ -139,7 +141,10 @@ if (!existsSync(config)) {
 		lines[typeIndex] = `type MigratedEntries = ${migratedEntries}`;
 	}
 
-	const updated = lines.join("\n").replace(/\};\s*$/, `${newLines}\n};`);
+	const updated = lines
+		.join("\n")
+		.replace(/interface MigrationData \{[^}]*\}/, migrationDataInterface)
+		.replace(/\};\s*$/, `${newLines}\n};`);
 	writeFileSync(config, updated);
 }
 
