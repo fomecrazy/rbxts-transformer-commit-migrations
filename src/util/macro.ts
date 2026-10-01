@@ -18,7 +18,7 @@ export function findMacroCall(node: ts.Node): ts.CallExpression | undefined {
 }
 
 export function replaceMacroCall(node: ts.Node, order: number, path: string[]): ts.Node | undefined {
-	if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
+	if (ts.isCallExpression(node)) {
 		const newArgs: ts.Expression[] = [];
 		let changed = false;
 
