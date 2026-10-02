@@ -24,12 +24,14 @@ export function replaceMacroCall(node: ts.Node, order: number, path: string[]): 
 
 		for (const arg of node.arguments) {
 			if (ts.isCallExpression(arg) && ts.isIdentifier(arg.expression) && MACRO_REGEX.test(arg.expression.text)) {
-			newArgs.push(ts.factory.createNumericLiteral(order));
 			newArgs.push(
-				ts.factory.createArrayLiteralExpression(
-					path.map(p => ts.factory.createStringLiteral(p)),
-					false
-				)
+				ts.factory.createArrayLiteralExpression([
+					ts.factory.createNumericLiteral(order),
+					ts.factory.createArrayLiteralExpression(
+						path.map(p => ts.factory.createStringLiteral(p)),
+						false
+					),
+				], false)
 			);
 			changed = true;
 			} else {
