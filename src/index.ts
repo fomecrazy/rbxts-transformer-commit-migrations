@@ -10,6 +10,12 @@ export interface TransformerConfig {
 }
 
 export default function (_: ts.Program, config?: TransformerConfig): ts.TransformerFactory<ts.SourceFile> {
+	const missingFile = config?.files?.find((f) => !existsSync(f));
+	if (missingFile !== undefined) {
+		console.error(`Migration file ${missingFile} does not exist`);
+		process.exit(1);
+	}
+
 	return (ctx: ts.TransformationContext): (file: ts.SourceFile) => ts.SourceFile => {
 		const configPath = config?.configPath ?? CONFIG;
 		if (!existsSync(configPath)) {
