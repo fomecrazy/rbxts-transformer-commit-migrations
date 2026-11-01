@@ -113,6 +113,13 @@ if (removedMigrations.length > 0) {
 }
 
 const newMigrations = migrations.filter((v) => !previousMigrations.includes(v));
+const lostMigrations = newMigrations.filter((v) => !migrationData[v]);
+
+if (lostMigrations.length > 0) {
+	console.error(`Migrations ${lostMigrations.join(", ")} are "__resolved" in the source but missing from ${config}. Restore their entries in ${config}, or change them back to $migrate(<order>) so they are recorded again.`);
+	process.exit(1);
+}
+
 const newLines = newMigrations
 	.map((e) => `\t"${e}": { timestamp: ${migrationData[e].timestamp}, order: ${migrationData[e].order}, path: ${JSON.stringify(migrationData[e].path)}, isTransform: ${migrationData[e].isTransform} },`)
 	.join("\n");
