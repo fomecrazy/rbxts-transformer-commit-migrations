@@ -26,8 +26,10 @@
   },
   "peerDependencies": {
     "husky": "*",
-    "jiti": "*",
     "typescript": ">=5.5"
+  },
+  "peerDependenciesMeta": {
+    "husky": { "optional": true }
   },
   "files": [
     "out",
