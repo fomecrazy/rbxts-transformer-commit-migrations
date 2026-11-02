@@ -24,14 +24,20 @@ export function replaceMacroCall(node: ts.Node, order: number, path: string[]): 
 
 		for (const arg of node.arguments) {
 			if (ts.isCallExpression(arg) && ts.isIdentifier(arg.expression) && MACRO_REGEX.test(arg.expression.text)) {
+			// roblox-ts type-checks the output, so the literal needs the macro's branded return type
 			newArgs.push(
-				ts.factory.createArrayLiteralExpression([
-					ts.factory.createNumericLiteral(order),
-					ts.factory.createArrayLiteralExpression(
-						path.map(p => ts.factory.createStringLiteral(p)),
-						false
-					),
-				], false)
+				ts.factory.createAsExpression(
+					ts.factory.createArrayLiteralExpression([
+						ts.factory.createNumericLiteral(order),
+						ts.factory.createArrayLiteralExpression(
+							path.map(p => ts.factory.createStringLiteral(p)),
+							false
+						),
+					], false),
+					ts.factory.createTypeReferenceNode("ReturnType", [
+						ts.factory.createTypeQueryNode(ts.factory.createIdentifier(arg.expression.text)),
+					])
+				)
 			);
 			changed = true;
 			} else {
