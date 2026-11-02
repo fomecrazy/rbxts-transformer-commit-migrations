@@ -1,6 +1,6 @@
 {
   "name": "rbxts-transformer-commit-migrations",
-  "version": "1.4.7",
+  "version": "1.4.8",
   "description": "rbxts transformer used in user data migration builder chains",
   "main": "out/index.js",
   "type": "module",
@@ -29,7 +29,9 @@
     "typescript": ">=5.5"
   },
   "peerDependenciesMeta": {
-    "husky": { "optional": true }
+    "husky": {
+      "optional": true
+    }
   },
   "files": [
     "out",
